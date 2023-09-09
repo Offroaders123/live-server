@@ -7,6 +7,7 @@ var liveServer = require("./index");
 var opts = {
 	host: process.env.IP,
 	port: process.env.PORT,
+	/** @type { string | boolean | string[] } */
 	open: true,
 	mount: [],
 	proxy: [],
@@ -14,7 +15,7 @@ var opts = {
 	logLevel: 2,
 };
 
-var homeDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'];
+var homeDir = /** @type { string } */ (process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME']);
 var configPath = path.join(homeDir, '.live-server.json');
 if (fs.existsSync(configPath)) {
 	var userConfig = fs.readFileSync(configPath, 'utf8');
@@ -23,7 +24,7 @@ if (fs.existsSync(configPath)) {
 }
 
 for (var i = process.argv.length - 1; i >= 2; --i) {
-	var arg = process.argv[i];
+	var arg = /** @type { string } */ (process.argv[i]);
 	if (arg.indexOf("--port=") > -1) {
 		var portString = arg.substring(7);
 		var portNumber = parseInt(portString, 10);
@@ -102,8 +103,8 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 	else if (arg.indexOf("--mount=") > -1) {
 		// e.g. "--mount=/components:./node_modules" will be ['/components', '<process.cwd()>/node_modules']
 		// split only on the first ":", as the path may contain ":" as well (e.g. C:\file.txt)
-		var match = arg.substring(8).match(/([^:]+):(.+)$/);
-		match[2] = path.resolve(process.cwd(), match[2]);
+		var match = /** @type { RegExpMatchArray } */ (arg.substring(8).match(/([^:]+):(.+)$/));
+		match[2] = path.resolve(process.cwd(), /** @type { string } */ (match[2]));
 		opts.mount.push([ match[1], match[2] ]);
 		process.argv.splice(i, 1);
 	}
@@ -116,6 +117,7 @@ for (var i = process.argv.length - 1; i >= 2; --i) {
 		}
 	}
 	else if (arg === "--version" || arg === "-v") {
+		/** @type { { name: string; version: string; } }  */ // @ts-ignore
 		var packageJson = require('./package.json');
 		console.log(packageJson.name, packageJson.version);
 		process.exit();

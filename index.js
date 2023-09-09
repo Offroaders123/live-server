@@ -340,10 +340,11 @@ function staticServer(root) {
 		var reqpath = isFile ? "" : url.parse(req.url).pathname;
 		var hasNoOrigin = !req.headers.origin;
 		var injectCandidates = [ new RegExp("</body>", "i"), new RegExp("</svg>"), new RegExp("</head>", "i")];
+		/** @type { RegExp | null } */
 		var injectTag = null;
 
 		function directory() {
-			var pathname = url.parse(req.originalUrl).pathname;
+			var pathname = /** @type { string } */ (url.parse(req.originalUrl).pathname);
 			res.statusCode = 301;
 			res.setHeader('Location', pathname + '/');
 			res.end('Redirecting to ' + escape(pathname) + '/');
