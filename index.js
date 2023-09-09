@@ -17,26 +17,29 @@ require('colors');
 var INJECTED_CODE = fs.readFileSync(path.join(__dirname, "injected.html"), "utf8");
 
 var LiveServer = {
+	/** @type { http.Server | import("node:https").Server | null } */
 	server: null,
+	/** @type { chokidar.FSWatcher | null } */
 	watcher: null,
 	logLevel: 2,
 
 	/**
 	 * Start a live server with parameters given as an object
-	 * @param host {string} Address to bind to (default: 0.0.0.0)
-	 * @param port {number} Port number (default: 8080)
-	 * @param root {string} Path to root directory (default: cwd)
-	 * @param watch {array} Paths to exclusively watch for changes
-	 * @param ignore {array} Paths to ignore when watching files for changes
-	 * @param ignorePattern {regexp} Ignore files by RegExp
-	 * @param noCssInject Don't inject CSS changes, just reload as with any other file change
-	 * @param open {(string|string[])} Subpath(s) to open in browser, use false to suppress launch (default: server root)
-	 * @param mount {array} Mount directories onto a route, e.g. [['/components', './node_modules']].
-	 * @param logLevel {number} 0 = errors only, 1 = some, 2 = lots
-	 * @param file {string} Path to the entry point file
-	 * @param wait {number} Server will wait for all changes, before reloading
-	 * @param htpasswd {string} Path to htpasswd file to enable HTTP Basic authentication
-	 * @param middleware {array} Append middleware to stack, e.g. [function(req, res, next) { next(); }].
+	 * @param {object} [options]
+	 * @param {string} [options.host] Address to bind to (default: 0.0.0.0)
+	 * @param {number} [options.port] Port number (default: 8080)
+	 * @param {string} [options.root] Path to root directory (default: cwd)
+	 * @param {Array<string>} [options.watch] Paths to exclusively watch for changes
+	 * @param {Array<string>} [options.ignore] Paths to ignore when watching files for changes
+	 * @param {RegExp} [options.ignorePattern] Ignore files by RegExp
+	 * @param [options.noCssInject] Don't inject CSS changes, just reload as with any other file change
+	 * @param {string | string[]} [options.open] Subpath(s) to open in browser, use false to suppress launch (default: server root)
+	 * @param {Array<string>} [options.mount] Mount directories onto a route, e.g. [['/components', './node_modules']].
+	 * @param {number} [options.logLevel] 0 = errors only, 1 = some, 2 = lots
+	 * @param {string} [options.file] Path to the entry point file
+	 * @param {number} [options.wait] Server will wait for all changes, before reloading
+	 * @param {string} [options.htpasswd] Path to htpasswd file to enable HTTP Basic authentication
+	 * @param {Array<(req,res,next: () => void) => { next: typeof next; }> } [options.middleware] Append middleware to stack, e.g. [function(req, res, next) { next(); }].
 	 */
 	start: function(options) {
 		options = options || {};
@@ -136,7 +139,10 @@ var LiveServer = {
 			.use(entryPoint(staticServerHandler, file))
 			.use(serveIndex(root, { icons: true }));
 
-		var server, protocol;
+		/** @type { http.Server | import("node:https").Server } */
+		var server;
+		/** @type { "https" | "http" } */
+		var protocol;
 		if (https !== null) {
 			var httpsConfig = https;
 			if (typeof https === "string") {
@@ -222,6 +228,7 @@ var LiveServer = {
 		server.listen(port, host);
 
 		// WebSocket
+		/** @type { WebSocket[] } */
 		var clients = [];
 		server.addListener('upgrade', function(request, socket, head) {
 			var ws = new WebSocket(request, socket, head);
@@ -306,6 +313,9 @@ var LiveServer = {
 	}
 };
 
+/**
+ * @param {string} html
+ */
 function escape(html){
 	return String(html)
 		.replace(/&(?!\w+;)/g, '&amp;')
@@ -315,6 +325,9 @@ function escape(html){
 }
 
 // Based on connect.static(), but streamlined and with added code injecter
+/**
+ * @param {string} root
+ */
 function staticServer(root) {
 	var isFile = false;
 	try { // For supporting mounting files instead of just directories
@@ -384,8 +397,8 @@ function staticServer(root) {
 
 /**
  * Rewrite request URL and pass it back to the static handler.
- * @param staticHandler {function} Next handler
- * @param file {string} Path to the entry point file
+ * @param {(req,res,next) => void} staticHandler Next handler
+ * @param {string} file Path to the entry point file
  */
 function entryPoint(staticHandler, file) {
 	if (!file) return function(req, res, next) { next(); };
